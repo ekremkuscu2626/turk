@@ -7,23 +7,17 @@
     
     <style>
         :root { --gold: #d4af37; --gold-glow: rgba(212, 175, 55, 1); }
-        
-        /* Genel yasakları sadece gerekli yerlere uyguluyoruz */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body, html { 
-            width: 100%; height: 100%; overflow: hidden; 
-            background-color: #000; font-family: 'serif'; 
-            -webkit-text-size-adjust: 100%;
-        }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'serif'; -webkit-text-size-adjust: 100%; }
 
-        /* --- LOADING --- */
+        /* --- LOADING EKRANI (REHBERLİ) --- */
         #loading-screen {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.5s ease;
         }
-        .loader-logo { width: 120px; animation: spin 4s linear infinite; }
+        .loader-logo { width: 120px; animation: spin 4s linear infinite; margin-bottom: 20px; }
+        #loading-info { color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; text-align: center; padding: 0 20px; min-height: 40px; }
         @keyframes spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
 
         /* --- SAHNELER --- */
@@ -36,7 +30,6 @@
 
         .img-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .responsive-bg { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
-
         #hitbox-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
 
         .star-button {
@@ -45,38 +38,30 @@
             cursor: pointer; z-index: 100; pointer-events: auto;
             -webkit-tap-highlight-color: transparent;
         }
-        .star-button.selected { 
-            background: rgba(212, 175, 55, 0.4); 
-            box-shadow: 0 0 20px var(--gold-glow); 
-            border: 1.5px solid var(--gold); 
-        }
+        .star-button.selected { background: rgba(212, 175, 55, 0.4); box-shadow: 0 0 20px var(--gold-glow); border: 1.5px solid var(--gold); }
 
         /* --- UI --- */
         .ui-header { position: absolute; top: 10%; width: 100%; text-align: center; pointer-events: none; z-index: 200; }
-        .info-card { 
-            display: inline-block; background: rgba(0,0,0,0.85); border: 1.5px solid var(--gold); 
-            padding: 10px 20px; color: var(--gold); border-radius: 5px;
-            opacity: 0; transition: 0.3s;
-        }
+        .info-card { display: inline-block; background: rgba(0,0,0,0.85); border: 1.5px solid var(--gold); padding: 10px 20px; color: var(--gold); border-radius: 5px; opacity: 0; transition: 0.3s; }
 
-        .ui-footer { position: absolute; bottom: 5%; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 300; }
+        .ui-footer { position: absolute; bottom: 5%; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 300; }
         
-        .btn-launch { 
-            width: 280px; height: 60px; background: transparent; 
-            border: none; cursor: pointer; pointer-events: auto;
-            -webkit-tap-highlight-color: transparent;
+        /* GÖRÜNMEYEN ASIL BAŞLAT BUTONU (Eskisi) */
+        .btn-launch-area { width: 280px; height: 50px; background: transparent; border: none; cursor: pointer; pointer-events: auto; }
+
+        /* YENİ GÖRÜNÜR BAŞLAT BUTONU */
+        .visible-start-btn {
+            width: 220px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold);
+            color: var(--gold); padding: 10px; font-size: 0.8rem; letter-spacing: 2px;
+            text-transform: uppercase; cursor: pointer; border-radius: 3px; transition: 0.3s;
         }
-        
-        /* Input için kritik düzeltmeler */
+        .visible-start-btn:active { background: var(--gold); color: #000; }
+
         .hero-input { 
             width: 220px; height: 45px; background: #111; border: 1.5px solid #444; 
             color: var(--gold); text-align: center; font-size: 1.2rem;
-            pointer-events: auto !important; 
-            -webkit-user-select: text !important;
-            user-select: text !important;
-            outline: none;
-            position: relative;
-            z-index: 400; /* Her şeyin üstünde */
+            pointer-events: auto !important; -webkit-user-select: text !important; user-select: text !important;
+            outline: none; z-index: 400;
         }
 
         #development-stage { background: #000; z-index: 500; }
@@ -87,7 +72,7 @@
 
     <div id="loading-screen">
         <img src="logo.png" class="loader-logo">
-        <p style="color:var(--gold); margin-top:15px;">YÜKLENİYOR...</p>
+        <p id="loading-info">YÜKLENİYOR...</p>
     </div>
 
     <div id="game-stage" class="stage">
@@ -101,7 +86,7 @@
             </div>
         </div>
         <div class="ui-footer">
-            <button class="btn-launch" id="start-btn" onclick="Core.startGame()"></button>
+            <button class="visible-start-btn" onclick="Core.startGame()">Devletini Seç ve Başla</button>
             <input type="text" id="player-name" class="hero-input" placeholder="ADINIZ" autocomplete="off" ontouchstart="event.stopPropagation()">
         </div>
     </div>
@@ -122,15 +107,36 @@
             { n: "OSMANLI İMPARATORLUĞU" }, { n: "TÜRKİYE CUMHURİYETİ" }
         ];
 
+        const HOW_TO_PLAY = [
+            "NASIL OYNANIR: 12 yıldızdan birini seç.",
+            "NASIL OYNANIR: Adını yaz ve tarihe adım at.",
+            "İPUCU: Her yıldız kadim bir Türk devletidir.",
+            "GÖREV: Soruları bil, mühürleri parlat!"
+        ];
+
         const Core = {
             selected: false,
             selectedIndex: -1,
 
             init: function() {
-                setTimeout(() => this.showGame(), 3000);
+                this.startLoadingTips();
+                setTimeout(() => this.showGame(), 5000); // Bilgilerin okunması için süreyi biraz uzattım
                 const bg = document.getElementById('main-bg');
                 if (bg.complete) { this.drawStars(); } else { bg.onload = () => this.drawStars(); }
                 window.addEventListener('resize', () => this.drawStars());
+            },
+
+            startLoadingTips: function() {
+                let i = 0;
+                const infoEl = document.getElementById('loading-info');
+                setInterval(() => {
+                    infoEl.style.opacity = 0;
+                    setTimeout(() => {
+                        infoEl.innerText = HOW_TO_PLAY[i % HOW_TO_PLAY.length];
+                        infoEl.style.opacity = 1;
+                        i++;
+                    }, 500);
+                }, 2500);
             },
 
             showGame: function() {
@@ -154,7 +160,6 @@
                 overlay.style.height = bg.clientHeight + "px";
                 if(overlay.children.length === 12) return;
 
-                overlay.innerHTML = "";
                 for (let i = 0; i < 12; i++) {
                     const angle = (i * 30 - 90) * (Math.PI / 180);
                     const posX = 50 + 26 * Math.cos(angle);
@@ -185,7 +190,7 @@
                     return;
                 }
                 if(!this.selected) {
-                    alert("Lütfen bir devlet seçin.");
+                    alert("Lütfen bir devlet seçin (Yıldıza dokunun).");
                     return;
                 }
 
