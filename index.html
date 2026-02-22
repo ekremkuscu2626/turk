@@ -7,10 +7,10 @@
     
     <style>
         :root { --gold: #d4af37; --gold-glow: rgba(212, 175, 55, 1); }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; touch-action: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'serif'; }
 
-        /* --- LOADING EKRANI --- */
+        /* --- LOADING --- */
         #loading-screen {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -25,7 +25,6 @@
             flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; transition: opacity 0.8s ease;
         }
-
         #game-stage { display: flex; z-index: 10; }
 
         .img-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
@@ -53,11 +52,13 @@
         }
 
         .ui-footer { position: absolute; bottom: 5%; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 200; }
-        .btn-launch { width: 280px; height: 60px; background: transparent; border: none; cursor: pointer; }
+        .btn-launch { width: 280px; height: 60px; background: transparent; border: none; cursor: pointer; pointer-events: auto; }
+        
+        /* Input mobilde yazılabilir olması için user-select: text ve touch-action: auto ekledik */
         .hero-input { 
             width: 220px; height: 40px; background: #0a0a0a; border: 1px solid #444; 
             color: var(--gold); text-align: center; font-size: 1rem;
-            pointer-events: auto;
+            pointer-events: auto; -webkit-user-select: text; user-select: text; touch-action: auto;
         }
 
         #development-stage { background: #000; z-index: 500; }
@@ -73,7 +74,7 @@
 
     <div id="game-stage" class="stage">
         <div class="img-container">
-            <img src="giris.jpg" class="responsive-bg" id="main-bg" alt="">
+            <img src="giris.jpg" class="responsive-bg" id="main-bg">
             <div id="hitbox-overlay"></div>
         </div>
         <div class="ui-header">
@@ -83,7 +84,7 @@
         </div>
         <div class="ui-footer">
             <button class="btn-launch" id="start-btn" onclick="Core.startGame()"></button>
-            <input type="text" id="player-name" class="hero-input" placeholder="ADINIZ">
+            <input type="text" id="player-name" class="hero-input" placeholder="ADINIZ" autocomplete="off">
         </div>
     </div>
 
@@ -99,7 +100,7 @@
             { n: "UYGUR KAĞANLIĞI" }, { n: "KARAHANLI DEVLETİ" },
             { n: "GAZNE DEVLETİ" }, { n: "BÜYÜK SELÇUKLU DEVLETİ" },
             { n: "HAREZMŞAHLAR DEVLETİ" }, { n: "ALTIN ORDA DEVLETİ" },
-            { n: "TİMUR İMPARATORLUĞU" }, { n: "BABÜİ İMPARATORLUĞU" },
+            { n: "TİMUR İMPARATORLUĞU" }, { n: "BABÜÜR İMPARATORLUĞU" },
             { n: "OSMANLI İMPARATORLUĞU" }, { n: "TÜRKİYE CUMHURİYETİ" }
         ];
 
@@ -108,22 +109,10 @@
             selectedIndex: -1,
 
             init: function() {
-                // 1. Loading'i 3 saniye sonra NE OLURSA OLSUN kapat
                 setTimeout(() => this.showGame(), 3000);
-
-                // 2. Yıldızları çizmek için resmi bekle veya hemen çiz
                 const bg = document.getElementById('main-bg');
-                if (bg.complete) {
-                    this.drawStars();
-                } else {
-                    bg.onload = () => this.drawStars();
-                }
-
-                // 3. Pencere boyutu değişiminde yıldızları tazele
+                if (bg.complete) { this.drawStars(); } else { bg.onload = () => this.drawStars(); }
                 window.addEventListener('resize', () => this.drawStars());
-                
-                // 4. Mobilde tıklama sorununa karşı periyodik kontrol
-                setInterval(() => this.drawStars(), 2000);
             },
 
             showGame: function() {
@@ -143,11 +132,8 @@
                 const overlay = document.getElementById('hitbox-overlay');
                 const bg = document.getElementById('main-bg');
                 if(!bg || bg.clientWidth === 0) return;
-
                 overlay.style.width = bg.clientWidth + "px";
                 overlay.style.height = bg.clientHeight + "px";
-                
-                // Eğer yıldızlar zaten çizilmişse tekrar çizme (performans için)
                 if(overlay.children.length === 12) return;
 
                 overlay.innerHTML = "";
@@ -155,13 +141,11 @@
                     const angle = (i * 30 - 90) * (Math.PI / 180);
                     const posX = 50 + 26 * Math.cos(angle);
                     const posY = 48 + 26 * Math.sin(angle);
-                    
                     const star = document.createElement('div');
                     star.className = 'star-button';
                     star.style.left = posX + "%"; star.style.top = posY + "%";
                     
-                    // Hem dokunma hem tıklama desteği
-                    const selectFn = (e) => {
+                    star.addEventListener('pointerdown', (e) => {
                         e.preventDefault();
                         document.querySelectorAll('.star-button').forEach(s => s.classList.remove('selected'));
                         star.classList.add('selected');
@@ -169,17 +153,25 @@
                         document.getElementById('info-card').style.opacity = '1';
                         this.selected = true;
                         this.selectedIndex = i;
-                    };
-
-                    star.addEventListener('pointerdown', selectFn);
+                    });
                     overlay.appendChild(star);
                 }
             },
 
             startGame: function() {
-                const name = document.getElementById('player-name').value.trim();
-                if(!name || !this.selected) {
-                    alert("İsim yazın ve bir yıldız seçin!");
+                // Input değerini okurken trim yaparak boşlukları temizle
+                const nameInput = document.getElementById('player-name');
+                const name = nameInput.value.trim();
+
+                console.log("Girilen İsim:", name); // Hata ayıklama için
+
+                if(!name || name === "") {
+                    alert("Lütfen bir isim yazın.");
+                    nameInput.focus();
+                    return;
+                }
+                if(!this.selected) {
+                    alert("Lütfen bir devlet seçin (Yıldıza dokunun).");
                     return;
                 }
 
@@ -194,7 +186,6 @@
             }
         };
 
-        // Kodu başlat
         Core.init();
     </script>
 </body>
