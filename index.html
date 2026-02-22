@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Devlet-i Ebed Müddet</title>
+    
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-glow: rgba(212, 175, 55, 1);
+            --hitbox-size: 8%; /* Mobilde dokunmatik için biraz büyütüldü */
+        }
+
+        /* Mobilde kaydırmayı ve seçim yapmayı engeller */
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-user-select: none; user-select: none;
+            touch-action: manipulation; 
+        }
+
+        body, html {
+            width: 100%; height: 100%; overflow: hidden;
+            background-color: #000; font-family: 'serif';
+        }
+
+        /* --- LOADING EKRANI --- */
+        #loading-screen {
+            position: fixed; inset: 0; background: #000; z-index: 3000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 1s, visibility 1s;
+        }
+
+        .loader-logo {
+            width: 40vw; max-width: 150px; height: auto;
+            animation: logo-spin 4s linear infinite, logo-glow 2s ease-in-out infinite alternate;
+        }
+
+        .tip-text {
+            color: var(--gold); font-size: clamp(0.9rem, 3vw, 1.2rem); 
+            text-align: center; margin-top: 30px; letter-spacing: 1px;
+            opacity: 0; transition: 0.8s; text-transform: uppercase;
+        }
+        .tip-text.active { opacity: 1; }
+
+        /* --- ANA EKRAN YAPISI --- */
+        #game-stage, #development-stage {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 1s;
+        }
+
+        /* Görselin telefonda taşmamasını sağlayan kapsayıcı */
+        .img-container {
+            position: relative;
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .responsive-bg {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain; /* Görsel oranını korur, kesmez */
+        }
+
+        /* --- YILDIZLAR --- */
+        #hitbox-overlay {
+            position: absolute; 
+            /* Görselin üzerine tam oturması için en-boy oranını koruyan bir div */
+            aspect-ratio: 16/9; /* giris.jpg oranına göre ayarla */
+            max-width: 100%; max-height: 100%;
+            width: 100%; height: auto;
+        }
+
+        .star-button {
+            position: absolute; width: var(--hitbox-size); aspect-ratio: 1/1;
+            transform: translate(-50%, -50%); border-radius: 50%;
+            cursor: pointer; transition: 0.3s;
+        }
+        .star-button.selected {
+            background: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 0 25px var(--gold-glow);
+        }
+
+        /* --- UI ELEMANLARI --- */
+        #ui-header { position: absolute; top: 8%; width: 100%; text-align: center; z-index: 100; }
+        .info-card {
+            background: rgba(0,0,0,0.8); border: 1px solid var(--gold);
+            padding: 8px 20px; color: var(--gold); border-radius: 5px;
+            display: none; backdrop-filter: blur(5px);
+        }
+
+        #ui-footer { 
+            position: absolute; bottom: 5%; width: 100%; 
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+
+        .btn-launch {
+            width: 70vw; max-width: 300px; height: 50px;
+            background: transparent; border: none; cursor: pointer;
+        }
+
+        .hero-input {
+            width: 60vw; max-width: 250px; background: #111; border: 1px solid #333;
+            color: var(--gold); text-align: center; padding: 5px; font-size: 1rem;
+        }
+
+        /* Animasyonlar */
+        @keyframes logo-spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        @keyframes logo-glow { from { filter: drop-shadow(0 0 5px var(--gold)); } to { filter: drop-shadow(0 0 15px var(--gold)); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <img src="logo.png" class="loader-logo">
+        <div id="tip-text" class="tip-text active">TARİH HAZIRLANIYOR...</div>
+    </div>
+
+    <div id="game-stage">
+        <div class="img-container">
+            <img src="giris.jpg" class="responsive-bg" id="main-bg">
+            <div id="hitbox-overlay"></div>
+        </div>
+        <div id="ui-header">
+            <div id="info-card" class="info-card">
+                <h2 id="display-name">DEVLET SEÇİNİZ</h2>
+            </div>
+        </div>
+        <div id="ui-footer">
+            <button class="btn-launch" onclick="Core.startGame()"></button>
+            <input type="text" id="player-name" class="hero-input" placeholder="ADINIZI YAZIN">
+        </div>
+    </div>
+
+    <div id="development-stage" style="display: none;">
+        <h1 style="color:var(--gold); margin-bottom:10px;">GÖKTÜRK KAĞANLIĞI</h1>
+        <img src="gturk.png" class="responsive-bg" style="max-height: 70vh;">
+        <p id="welcome-msg" style="color:#fff; margin-top:15px;"></p>
+    </div>
+
+    <script>
+        const TIPS = ["12 Yıldızı Parlat", "Bilgini Kanıtla", "Destanını Yaz"];
+        const Core = {
+            init: function() {
+                this.drawStars();
+                this.handlePreloader();
+                window.onresize = () => this.drawStars();
+            },
+            handlePreloader: function() {
+                let i = 0;
+                setInterval(() => {
+                    document.getElementById('tip-text').classList.remove('active');
+                    setTimeout(() => {
+                        document.getElementById('tip-text').innerText = TIPS[i % TIPS.length];
+                        document.getElementById('tip-text').classList.add('active');
+                        i++;
+                    }, 500);
+                }, 2500);
+
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        document.getElementById('game-stage').style.opacity = '1';
+                    }, 1000);
+                }, 5000);
+            },
+            drawStars: function() {
+                const overlay = document.getElementById('hitbox-overlay');
+                const bg = document.getElementById('main-bg');
+                // Overlay'i resmin gerçek boyutuna eşitle
+                overlay.style.width = bg.clientWidth + "px";
+                overlay.style.height = bg.clientHeight + "px";
+
+                overlay.innerHTML = "";
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * 30 - 90) * (Math.PI / 180);
+                    const posX = 50 + 26 * Math.cos(angle);
+                    const posY = 48 + 26 * Math.sin(angle);
+                    const star = document.createElement('div');
+                    star.className = 'star-button';
+                    star.style.left = posX + "%"; star.style.top = posY + "%";
+                    star.onclick = () => {
+                        document.querySelectorAll('.star-button').forEach(s => s.classList.remove('selected'));
+                        star.classList.add('selected');
+                        document.getElementById('info-card').style.display = 'block';
+                        document.getElementById('display-name').innerText = "GÖKTÜRK KAĞANLIĞI";
+                        this.selected = true;
+                    };
+                    overlay.appendChild(star);
+                }
+            },
+            startGame: function() {
+                const name = document.getElementById('player-name').value;
+                if(!name || !this.selected) return alert("İsim yaz ve devlet seç!");
+                
+                document.getElementById('game-stage').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('game-stage').style.display = 'none';
+                    document.getElementById('development-stage').style.display = 'flex';
+                    document.getElementById('welcome-msg').innerText = "Kutlu olsun, " + name + "!";
+                    setTimeout(() => { document.getElementById('development-stage').style.opacity = '1'; }, 50);
+                }, 1000);
+            }
+        };
+        window.onload = () => Core.init();
+    </script>
+</body>
+</html>
