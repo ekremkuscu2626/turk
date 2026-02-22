@@ -6,107 +6,82 @@
     <title>Devlet-i Ebed Müddet</title>
     
     <style>
-        :root {
-            --gold: #d4af37;
-            --gold-glow: rgba(212, 175, 55, 1);
-        }
+        :root { --gold: #d4af37; --gold-glow: rgba(212, 175, 55, 1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; touch-action: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Constantia', serif; }
 
-        * { 
-            margin: 0; padding: 0; box-sizing: border-box; 
-            -webkit-user-select: none; user-select: none;
-            touch-action: manipulation; 
-        }
-
-        body, html {
-            width: 100%; height: 100%; overflow: hidden;
-            background-color: #000; font-family: 'Constantia', serif;
-        }
-
-        /* --- LOADING --- */
+        /* --- LOADING EKRANI --- */
         #loading-screen {
-            position: fixed; inset: 0; background: #000; z-index: 3000;
+            position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease;
         }
-        .loader-logo { width: 120px; animation: logo-spin 4s linear infinite; }
+        .loader-logo { width: 140px; animation: spin 4s linear infinite; filter: drop-shadow(0 0 10px var(--gold)); }
+        @keyframes spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
 
-        /* --- SAHNE YÖNETİMİ --- */
+        /* --- SAHNELER --- */
         .stage {
-            position: absolute; inset: 0; width: 100%; height: 100%;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.8s ease-in-out;
-            overflow: hidden;
+            position: absolute; inset: 0; display: none; 
+            flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 1s ease;
         }
 
-        #game-stage { display: flex; opacity: 1; z-index: 10; }
+        #game-stage { display: flex; opacity: 0; z-index: 10; }
 
-        .img-container {
-            position: relative; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-        }
-
+        .img-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .responsive-bg { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* --- YILDIZLAR --- */
-        #hitbox-overlay {
-            position: absolute; width: 100%; height: 100%;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-        }
+        #hitbox-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
         .star-button {
             position: absolute; width: 10%; aspect-ratio: 1/1;
             transform: translate(-50%, -50%); border-radius: 50%;
-            cursor: pointer; z-index: 50;
+            cursor: pointer; z-index: 100; pointer-events: auto;
         }
-        .star-button.selected {
-            background: rgba(212, 175, 55, 0.4);
-            box-shadow: 0 0 20px var(--gold-glow);
-            border: 1px solid var(--gold);
-        }
-
-        /* --- UI --- */
-        .ui-header { position: absolute; top: 10%; width: 100%; text-align: center; pointer-events: none; }
-        .info-card {
-            display: inline-block; background: rgba(0,0,0,0.8); border: 1px solid var(--gold);
-            padding: 10px 20px; color: var(--gold); border-radius: 4px;
-            visibility: hidden; opacity: 0; transition: 0.3s;
+        .star-button.selected { 
+            background: rgba(212, 175, 55, 0.4); 
+            box-shadow: 0 0 25px var(--gold-glow); 
+            border: 1.5px solid var(--gold); 
         }
 
-        .ui-footer { 
-            position: absolute; bottom: 5%; width: 100%; 
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        /* --- UI ELEMANLARI --- */
+        .ui-header { position: absolute; top: 10%; width: 100%; text-align: center; pointer-events: none; z-index: 200; }
+        .info-card { 
+            display: inline-block; background: rgba(0,0,0,0.85); border: 1.5px solid var(--gold); 
+            padding: 10px 25px; color: var(--gold); border-radius: 5px;
+            opacity: 0; visibility: hidden; transition: 0.4s; backdrop-filter: blur(5px);
         }
 
-        .btn-launch { width: 300px; height: 70px; background: transparent; border: none; outline: none; }
-        .hero-input {
-            width: 250px; height: 40px; background: #111; border: 1px solid #444;
-            color: var(--gold); text-align: center; font-size: 1.1rem;
+        .ui-footer { position: absolute; bottom: 5%; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 200; }
+        .btn-launch { width: 300px; height: 70px; background: transparent; border: none; outline: none; cursor: pointer; }
+        .hero-input { 
+            width: 240px; height: 40px; background: #0a0a0a; border: 1px solid #444; 
+            color: var(--gold); text-align: center; font-size: 1.1rem; letter-spacing: 2px;
+            pointer-events: auto; -webkit-user-select: text;
         }
 
-        /* --- GELİŞME --- */
-        #development-stage { background: #000; z-index: 100; }
-        #gturk-image { max-width: 90%; max-height: 70%; border: 1px solid var(--gold); }
-
-        @keyframes logo-spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        /* --- GELİŞME EKRANI --- */
+        #development-stage { background: #000; z-index: 500; }
+        #gturk-image { max-width: 90%; max-height: 65%; border: 1px solid var(--gold); box-shadow: 0 0 30px rgba(212, 175, 55, 0.3); }
     </style>
 </head>
 <body>
 
     <div id="loading-screen">
         <img src="logo.png" class="loader-logo">
+        <p style="color:var(--gold); margin-top:20px; letter-spacing:2px; font-size:0.9rem;">TARİH YÜKLENİYOR...</p>
     </div>
 
     <div id="game-stage" class="stage">
         <div class="img-container">
-            <img src="giris.jpg" class="responsive-bg" id="main-bg" onload="Core.drawStars()">
+            <img src="giris.jpg" class="responsive-bg" id="main-bg">
             <div id="hitbox-overlay"></div>
         </div>
-        
         <div class="ui-header">
             <div id="info-card" class="info-card">
-                <h2 id="display-name">GÖKTÜRK KAĞANLIĞI</h2>
+                <h2 id="display-name" style="font-size: 1.2rem; letter-spacing: 2px;">DEVLET ADI</h2>
             </div>
         </div>
-
         <div class="ui-footer">
             <button class="btn-launch" id="start-btn"></button>
             <input type="text" id="player-name" class="hero-input" placeholder="ADINIZI YAZIN">
@@ -114,29 +89,55 @@
     </div>
 
     <div id="development-stage" class="stage">
-        <h1 style="color:var(--gold); margin-bottom:15px;">GÖKTÜRK</h1>
+        <h1 id="dev-title" style="color:var(--gold); margin-bottom:20px; letter-spacing: 5px;">GÖKTÜRK</h1>
         <img src="gturk.png" id="gturk-image">
-        <p id="welcome-msg" style="color:#fff; margin-top:20px;"></p>
+        <p id="welcome-msg" style="color:#fff; margin-top:25px; font-size: 1.1rem; text-align:center; padding:0 20px;"></p>
     </div>
 
     <script>
+        const EMPIRES = [
+            { n: "BÜYÜK HUN İMPARATORLUĞU" }, { n: "GÖKTÜRK KAĞANLIĞI" },
+            { n: "UYGUR KAĞANLIĞI" }, { n: "KARAHANLI DEVLETİ" },
+            { n: "GAZNE DEVLETİ" }, { n: "BÜYÜK SELÇUKLU DEVLETİ" },
+            { n: "HAREZMŞAHLAR DEVLETİ" }, { n: "ALTIN ORDA DEVLETİ" },
+            { n: "TİMUR İMPARATORLUĞU" }, { n: "BABÜR İMPARATORLUĞU" },
+            { n: "OSMANLI İMPARATORLUĞU" }, { n: "TÜRKİYE CUMHURİYETİ" }
+        ];
+
         const Core = {
             selected: false,
+            selectedIndex: -1,
+
             init: function() {
-                // Loading ekranını kaldır
+                const bg = document.getElementById('main-bg');
+                const forceClose = setTimeout(() => this.showGame(), 4000);
+
+                if (bg.complete) {
+                    this.drawStars();
+                } else {
+                    bg.onload = () => { this.drawStars(); clearTimeout(forceClose); this.showGame(); };
+                }
+
+                document.getElementById('start-btn').addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    this.startGame();
+                });
+
+                window.addEventListener('resize', () => this.drawStars());
+            },
+
+            showGame: function() {
+                document.getElementById('loading-screen').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('loading-screen').style.display = 'none';
-                }, 2000);
-
-                document.getElementById('start-btn').addEventListener('pointerdown', () => this.startGame());
-                window.addEventListener('resize', () => this.drawStars());
+                    document.getElementById('game-stage').style.display = 'flex';
+                    setTimeout(() => document.getElementById('game-stage').style.opacity = '1', 50);
+                }, 800);
             },
 
             drawStars: function() {
                 const overlay = document.getElementById('hitbox-overlay');
                 const bg = document.getElementById('main-bg');
-                if(!bg.complete) return;
-
                 overlay.style.width = bg.clientWidth + "px";
                 overlay.style.height = bg.clientHeight + "px";
                 overlay.innerHTML = "";
@@ -152,12 +153,18 @@
                     
                     star.addEventListener('pointerdown', (e) => {
                         e.preventDefault();
+                        e.stopPropagation();
+                        
                         document.querySelectorAll('.star-button').forEach(s => s.classList.remove('selected'));
                         star.classList.add('selected');
+                        
                         const card = document.getElementById('info-card');
+                        document.getElementById('display-name').innerText = EMPIRES[i].n;
                         card.style.visibility = 'visible';
                         card.style.opacity = '1';
+                        
                         this.selected = true;
+                        this.selectedIndex = i;
                     });
                     overlay.appendChild(star);
                 }
@@ -165,26 +172,26 @@
 
             startGame: function() {
                 const name = document.getElementById('player-name').value.trim();
-                
-                if(!name) { alert("Lütfen adınızı yazın."); return; }
-                if(!this.selected) { alert("Lütfen bir devlet seçin (Yıldızlara dokunun)."); return; }
+                if(!name || !this.selected) {
+                    alert("Lütfen adınızı yazın ve bir yıldıza dokunarak devletinizi seçin.");
+                    return;
+                }
 
-                const gStage = document.getElementById('game-stage');
-                const dStage = document.getElementById('development-stage');
-
-                // Geçişi başlat
-                gStage.style.opacity = '0';
-                
+                document.getElementById('game-stage').style.opacity = '0';
                 setTimeout(() => {
-                    gStage.style.display = 'none';
-                    dStage.style.display = 'flex';
-                    document.getElementById('welcome-msg').innerText = "Kutlu olsun, " + name + "!";
+                    document.getElementById('game-stage').style.display = 'none';
+                    const dev = document.getElementById('development-stage');
+                    dev.style.display = 'flex';
                     
-                    // Gelişme aşamasını görünür yap
-                    setTimeout(() => {
-                        dStage.style.opacity = '1';
-                    }, 50);
-                }, 850; // Opacity transition ile uyumlu süre
+                    if(this.selectedIndex === 1) { // Göktürk seçildiyse
+                        document.getElementById('welcome-msg').innerText = `Kutlu olsun ${name}, Göktürklerin kaderi artık senin elinde!`;
+                    } else {
+                        document.getElementById('dev-title').innerText = EMPIRES[this.selectedIndex].n;
+                        document.getElementById('welcome-msg').innerText = `Hoş geldin ${name}, ${EMPIRES[this.selectedIndex].n} için sefer başlıyor!`;
+                    }
+                    
+                    setTimeout(() => dev.style.opacity = '1', 50);
+                }, 1000);
             }
         };
 
